@@ -1,11 +1,33 @@
+ENTRY(_start)
+
 SECTIONS
 {
-    .text.boot : { *(.text.boot) }
-    .text      : { *(.text) }
-    .rodata    : { *(.rodata) }
-    .data      : { *(.data) }
-    . = ALIGN(8);
+    . = 0x80000;
+
+    .text.boot : {
+        KEEP(*(.text.boot))
+    }
+
+    .text : {
+        *(.text*)
+    }
+
+    .rodata : {
+        *(.rodata*)
+    }
+
+    .data : {
+        *(.data*)
+    }
+
+    . = ALIGN(16);
     bss_start = .;
-    .bss : { *(.bss*) }
+
+    .bss : {
+        *(.bss*)
+        *(COMMON)
+    }
+
+    . = ALIGN(16);
     bss_end = .;
 }

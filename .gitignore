@@ -1,2 +1,14 @@
-/build/
-/kernel8.img
+build/
+*.pdf
+
+*.img
+*.elf
+*.o
+*.d
+
+start*.elf
+fixup*.dat
+*.dtb
+*.dtbo
+
+cmdline.txt

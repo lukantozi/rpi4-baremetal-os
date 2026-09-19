@@ -11,19 +11,21 @@ _start:
     wfe
     b       .wait
 
+.core:
+    adr     x0, bss_start
+    adr     x1, bss_end
+    subs    x1, x1, x0
+    b.le    .skip_memzero
+
 .memzero:
     str     xzr, [x0], #8
     subs    x1, x1, #8
     b.gt    .memzero
-    ret
 
-.core:
-    adr     x0, bss_start
-    adr     x1, bss_end
-    sub     x1, x1, x0
-    bl      .memzero
+.skip_memzero:
     mov     sp, 0x400000
-
     bl      kernel_main
-    ret
-    hlt     #0
+
+.hang:
+    wfe
+    b       .hang
