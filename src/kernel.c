@@ -1,3 +1,4 @@
+#include "common.h"
 #include "peripherals.h"
 #include "utils.h"
 
@@ -22,14 +23,14 @@ void pup_pdn_resistor_disable(void)
 
 void mini_uart_enable(void)
 {
-    put32(AUX_ENABLES, 1);       // enable access to mini uart registers
-    put32(AUX_MU_CNTL_REG, 0);   // disable t/r while configuring mini uart
-    put32(AUX_MU_IER_REG, 0);    // disable t/r interrupts for now
-    put32(AUX_MU_LCR_REG, 3);    // enable 8 bit mode
-    put32(AUX_MU_IIR_REG, 0xc6); // clear both FIFOs
-    put32(AUX_MU_MCR_REG, 0);    // set RTS high to prevent receiver from receriving 0x00
-    put32(AUX_BAUD_REG, 541);    // set baud rate to 115200 (needs review)
-    put32(AUX_MU_CNTL_REG, 3);   // enable t/r
+    put32(AUX_ENABLES, 1);                      // enable access to mini uart registers
+    put32(AUX_MU_CNTL_REG, 0);                  // disable t/r while configuring mini uart
+    put32(AUX_MU_IER_REG, 0);                   // disable t/r interrupts for now
+    put32(AUX_MU_LCR_REG, 3);                   // enable 8 bit mode
+    put32(AUX_MU_IIR_REG, 0xc6);                // clear both FIFOs
+    put32(AUX_MU_MCR_REG, 0);                   // set RTS high to prevent receiver from receriving 0x00
+    put32(AUX_BAUD_REG, AUX_BAUD(BAUD_RATE));   // set baud rate to 115200
+    put32(AUX_MU_CNTL_REG, 3);                  // enable t/r
 }
 
 char uart_receive_char(void)
