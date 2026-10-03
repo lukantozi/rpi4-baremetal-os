@@ -1,15 +1,18 @@
-ARMGNU = aarch64-linux-gnu
+ARMGNU  := aarch64-linux-gnu
+BUILD   := build
+SRC     := src
+CFLAGS  := -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -MMD -MP
+ASFLAGS := -Iinclude
+OBJS    := $(patsubst $(SRC)/%.c,$(BUILD)/%_c.o,$(wildcard $(SRC)/*.c)) \
+		   $(patsubst $(SRC)/%.S,$(BUILD)/%_s.o,$(wildcard $(SRC)/*.S))
 
-CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -MMD -MP
-ASFLAGS = -Iinclude
-
-BUILD = build
-SRC = src
+.PHONY: all clean
 
 all: kernel8.img
 
-clean:
-	rm -rf $(BUILD) *.img
+kernel8.img: $(SRC)/linker.ld $(OBJS)
+	$(ARMGNU)-ld -T $(SRC)/linker.ld -o $(BUILD)/kernel8.elf $(OBJS)
+	$(ARMGNU)-objcopy $(BUILD)/kernel8.elf -O binary kernel8.img
 
 $(BUILD)/%_c.o: $(SRC)/%.c
 	mkdir -p $(@D)
@@ -19,12 +22,7 @@ $(BUILD)/%_s.o: $(SRC)/%.S
 	mkdir -p $(@D)
 	$(ARMGNU)-gcc $(ASFLAGS) -c $< -o $@
 
-C_FILES   = $(wildcard $(SRC)/*.c)
-ASM_FILES = $(wildcard $(SRC)/*.S)
-OBJ_FILES = $(C_FILES:$(SRC)/%.c=$(BUILD)/%_c.o)
-OBJ_FILES += $(ASM_FILES:$(SRC)/%.S=$(BUILD)/%_s.o)
--include $(OBJ_FILES:.o=.d)
+-include $(OBJS:.o=.d)
 
-kernel8.img: $(SRC)/linker.ld $(OBJ_FILES)
-	$(ARMGNU)-ld -T $(SRC)/linker.ld -o $(BUILD)/kernel8.elf $(OBJ_FILES)
-	$(ARMGNU)-objcopy $(BUILD)/kernel8.elf -O binary kernel8.img
+clean:
+	rm -rf $(BUILD) *.img
