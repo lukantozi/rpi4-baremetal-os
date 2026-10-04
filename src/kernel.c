@@ -2,8 +2,6 @@
 #include "peripherals.h"
 #include "utils.h"
 
-#define UART_SWITCH 0
-
 void gpio_activate(void)
 {
     unsigned int selector;

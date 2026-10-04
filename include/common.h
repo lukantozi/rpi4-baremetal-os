@@ -1,6 +1,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#ifndef UART_SWITCH
+#define UART_SWITCH 1
+#endif
+
 #define SYSTEM_CLOCK 500000000
 #define BAUD_RATE 115200
 #define AUX_BAUD(BAUD_RATE) (SYSTEM_CLOCK / ((BAUD_RATE) * 8) - 1)
