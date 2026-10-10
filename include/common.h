@@ -19,4 +19,14 @@ typedef enum {
     SELECT_UART1 = 1,
 } Su;
 
+#define WAKE_CPU1 0xe0
+#define WAKE_CPU2 0xe8
+#define WAKE_CPU3 0xf0
+
+/* from boot.S */
+extern void cpu123(void);
+extern unsigned long spin_cpu1;
+extern unsigned long spin_cpu2;
+extern unsigned long spin_cpu3;
+
 #endif

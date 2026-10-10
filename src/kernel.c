@@ -2,6 +2,16 @@
 #include "peripherals.h"
 #include "utils.h"
 
+void cpu1(void);
+void cpu2(void);
+void cpu3(void);
+
+/* fake uart sync */
+#define DELAY(s)                                       \
+do {                                                   \
+    for (volatile unsigned int i = 0; i < s; i++);     \
+} while (0)                                            \
+
 void gpio_activate(void)
 {
     unsigned int selector;
@@ -53,7 +63,8 @@ void mini_uart_send_char(char c)
     write_reg32(AUX_MU_IO_REG, c);
 }
 
-void mini_uart_send_string(const char *s) {
+void mini_uart_send_string(const char *s)
+{
     while (*s) {
         mini_uart_send_char(*s++);
     }
@@ -80,7 +91,8 @@ void uart0_send_char(char c)
     write_reg32(UART0_DR, c);
 }
 
-void uart0_send_string(const char *s) {
+void uart0_send_string(const char *s)
+{
     while (*s) {
         uart0_send_char(*s++);
     }
@@ -97,6 +109,38 @@ void uart_init(void)
 #endif
 }
 
+#define INIT_CPU(N, INSTR)                                                  \
+do {                                                                        \
+    write_addr32((unsigned long)&spin_cpu##N, (unsigned long)(INSTR));      \
+    write_addr32(WAKE_CPU##N, (unsigned long)&cpu123);                      \
+} while(0)                                                                  \
+
+void cpu1(void)
+{
+    DELAY(10000);
+    uart0_send_string("[CPU1 Activated]\r\n");
+}
+
+void cpu2(void)
+{
+    DELAY(100000);
+    uart0_send_string("[CPU2 Activated]\r\n");
+}
+
+void cpu3(void)
+{
+    DELAY(1000000);
+    uart0_send_string("[CPU3 Activated]\r\n");
+    uart0_send_string("Type: ");
+    while (1) {
+#if UART_SWITCH
+        mini_uart_send_char(mini_uart_receive_char());
+#else
+        uart0_send_char(uart0_receive_char());
+#endif
+    }
+}
+
 void kernel_main(void)
 {
     uart_init();
@@ -107,16 +151,13 @@ void kernel_main(void)
     mini_uart_send_string("Type: ");
 #else
     uart0_send_string("\r\n");
-    uart0_send_string("[Booting]\r\n");
     uart0_send_string("[UART0 Enabled]\r\n");
-    uart0_send_string("Type: ");
+    uart0_send_string("[Booting]\r\n");
+    uart0_send_string("[CPU0 Activated]\r\n");
 #endif
-
-    while (1) {
-#if UART_SWITCH
-        mini_uart_send_char(mini_uart_receive_char());
-#else
-        uart0_send_char(uart0_receive_char());
-#endif
-    }
+    DELAY(1000);
+    INIT_CPU(1, cpu1);
+    INIT_CPU(2, cpu2);
+    INIT_CPU(3, cpu3);
+    return;
 }
