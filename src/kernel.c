@@ -12,6 +12,17 @@ do {                                                   \
     for (volatile unsigned int i = 0; i < s; i++);     \
 } while (0)                                            \
 
+/* before implementing printf */
+#define REPORT_EL(el, uart)                                           \
+do {                                                                  \
+    switch (el) {                                                     \
+        case 0: uart##_send_string("[Exception level 0]\r\n"); break; \
+        case 1: uart##_send_string("[Exception level 1]\r\n"); break; \
+        case 2: uart##_send_string("[Exception level 2]\r\n"); break; \
+        case 3: uart##_send_string("[Exception level 3]\r\n"); break; \
+    }                                                                 \
+} while(0)                                                            \
+
 void gpio_activate(void)
 {
     unsigned int selector;
@@ -118,19 +129,25 @@ do {                                                                        \
 void cpu1(void)
 {
     DELAY(10000);
-    uart0_send_string("[CPU1 Activated]\r\n");
+    uart0_send_string("[CPU1 Activated] ");
+    int curr_el = get_current_el();
+    REPORT_EL(curr_el, uart0);
 }
 
 void cpu2(void)
 {
     DELAY(100000);
-    uart0_send_string("[CPU2 Activated]\r\n");
+    uart0_send_string("[CPU2 Activated] ");
+    int curr_el = get_current_el();
+    REPORT_EL(curr_el, uart0);
 }
 
 void cpu3(void)
 {
     DELAY(1000000);
-    uart0_send_string("[CPU3 Activated]\r\n");
+    uart0_send_string("[CPU3 Activated] ");
+    int curr_el = get_current_el();
+    REPORT_EL(curr_el, uart0);
     uart0_send_string("Type: ");
     while (1) {
 #if UART_SWITCH
@@ -140,17 +157,6 @@ void cpu3(void)
 #endif
     }
 }
-
-/* before implementing printf */
-#define REPORT_EL(el, uart)                                           \
-do {                                                                  \
-    switch (el) {                                                     \
-        case 0: uart##_send_string("[Exception level 0]\r\n"); break; \
-        case 1: uart##_send_string("[Exception level 1]\r\n"); break; \
-        case 2: uart##_send_string("[Exception level 2]\r\n"); break; \
-        case 3: uart##_send_string("[Exception level 3]\r\n"); break; \
-    }                                                                 \
-} while(0)                                                            \
 
 void kernel_main(void)
 {
@@ -166,12 +172,20 @@ void kernel_main(void)
     uart0_send_string("\r\n");
     uart0_send_string("[UART0 Enabled]\r\n");
     REPORT_EL(curr_el, uart0);
-    uart0_send_string("[Booting]\r\n");
     uart0_send_string("[CPU0 Activated]\r\n");
+    uart0_send_string("[Booting]\r\n");
 #endif
     DELAY(1000);
-    INIT_CPU(1, cpu1);
-    INIT_CPU(2, cpu2);
-    INIT_CPU(3, cpu3);
+    // INIT_CPU(1, cpu1);
+    // INIT_CPU(2, cpu2);
+    // INIT_CPU(3, cpu3);
+    uart0_send_string("Type: ");
+    while (1) {
+#if UART_SWITCH
+        mini_uart_send_char(mini_uart_receive_char());
+#else
+        uart0_send_char(uart0_receive_char());
+#endif
+    }
     return;
 }

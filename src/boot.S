@@ -1,16 +1,3 @@
-// following values are derived from AArch64-Reference-Manual
-
-// system control reg EL1 (page 2654)
-#define SCTLR_MMU_DISABLED ((3 << 28) | (3 << 22) | (1 << 20) | (1 << 11))
-
-// HCR_EL2, hypervisor config reg EL2 (page 2492)
-#define HCR_VALUE (1 << 31)
-
-// SPSR_EL3, saved program status register EL2 (Page 384)
-#define SPSR_VALUE (7 << 6 | 5)
-
-// derived values stop here
-
 .section ".text.boot"
 
     .globl _start
@@ -36,12 +23,16 @@ _start:
     b.gt    .memzero
 
 .skip_memzero:
-    ldr     x0, =SCTLR_MMU_DISABLED
+    // configure el1: mmu and caches off; little-endian
+    ldr     x0, =((3 << 28 | 3 << 22 | 1 << 20 | 1 << 11))
     msr     sctlr_el1, x0
-    ldr     x0, =HCR_VALUE
+    // ensure EL1 runs in AArch64 state
+    mov     x0, #(1 << 31)
     msr     hcr_el2, x0
-    ldr     x0, =SPSR_VALUE
+    // set spsr_el2 for el1h
+    mov     x0, #(7 << 6 | 5)
     msr     spsr_el2, x0
+    // set elr_el2 to el1 entry point
     adr     x0, el1
     msr     elr_el2, x0
     eret
@@ -49,7 +40,7 @@ _start:
 el1:
     mov     sp, 0x400000
     bl      kernel_main
-    dsb     sy // fluish memory accesses
+    dsb     sy // flush memory accesses
     sev
 
 .hang:
