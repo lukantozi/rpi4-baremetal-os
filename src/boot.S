@@ -1,3 +1,16 @@
+// following values are derived from AArch64-Reference-Manual
+
+// system control reg EL1 (page 2654)
+#define SCTLR_MMU_DISABLED ((3 << 28) | (3 << 22) | (1 << 20) | (1 << 11))
+
+// HCR_EL2, hypervisor config reg EL2 (page 2492)
+#define HCR_VALUE (1 << 31)
+
+// SPSR_EL3, saved program status register EL2 (Page 384)
+#define SPSR_VALUE (7 << 6 | 5)
+
+// derived values stop here
+
 .section ".text.boot"
 
     .globl _start
@@ -23,6 +36,17 @@ _start:
     b.gt    .memzero
 
 .skip_memzero:
+    ldr     x0, =SCTLR_MMU_DISABLED
+    msr     sctlr_el1, x0
+    ldr     x0, =HCR_VALUE
+    msr     hcr_el2, x0
+    ldr     x0, =SPSR_VALUE
+    msr     spsr_el2, x0
+    adr     x0, el1
+    msr     elr_el2, x0
+    eret
+
+el1:
     mov     sp, 0x400000
     bl      kernel_main
     dsb     sy // fluish memory accesses
@@ -52,18 +76,19 @@ park:
     wfe
     b       park
 
+    .balign 8
     .globl spin_cpu0
 spin_cpu0:
 	.quad 0
 
-.globl spin_cpu1
+    .globl spin_cpu1
 spin_cpu1:
 	.quad 0
 
-.globl spin_cpu2
+    .globl spin_cpu2
 spin_cpu2:
 	.quad 0
 
-.globl spin_cpu3
+    .globl spin_cpu3
 spin_cpu3:
     .quad 0

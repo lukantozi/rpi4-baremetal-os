@@ -111,8 +111,8 @@ void uart_init(void)
 
 #define INIT_CPU(N, INSTR)                                                  \
 do {                                                                        \
-    write_addr32((unsigned long)&spin_cpu##N, (unsigned long)(INSTR));      \
-    write_addr32(WAKE_CPU##N, (unsigned long)&cpu123);                      \
+    write_addr64((unsigned long)&spin_cpu##N, (unsigned long)(INSTR));      \
+    write_addr64(WAKE_CPU##N, (unsigned long)&cpu123);                      \
 } while(0)                                                                  \
 
 void cpu1(void)
@@ -141,17 +141,31 @@ void cpu3(void)
     }
 }
 
+/* before implementing printf */
+#define REPORT_EL(el, uart)                                           \
+do {                                                                  \
+    switch (el) {                                                     \
+        case 0: uart##_send_string("[Exception level 0]\r\n"); break; \
+        case 1: uart##_send_string("[Exception level 1]\r\n"); break; \
+        case 2: uart##_send_string("[Exception level 2]\r\n"); break; \
+        case 3: uart##_send_string("[Exception level 3]\r\n"); break; \
+    }                                                                 \
+} while(0)                                                            \
+
 void kernel_main(void)
 {
     uart_init();
+    int curr_el = get_current_el();
 #if UART_SWITCH
     mini_uart_send_string("\r\n");
-    mini_uart_send_string("[Booting]\r\n");
     mini_uart_send_string("[Mini UART Enabled]\r\n");
+    REPORT_EL(curr_el, mini_uart);
+    mini_uart_send_string("[Booting]\r\n");
     mini_uart_send_string("Type: ");
 #else
     uart0_send_string("\r\n");
     uart0_send_string("[UART0 Enabled]\r\n");
+    REPORT_EL(curr_el, uart0);
     uart0_send_string("[Booting]\r\n");
     uart0_send_string("[CPU0 Activated]\r\n");
 #endif

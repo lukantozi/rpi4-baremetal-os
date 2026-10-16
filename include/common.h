@@ -2,7 +2,7 @@
 #define COMMON_H
 
 #ifndef UART_SWITCH
-#define UART_SWITCH 1
+#define UART_SWITCH 0
 #endif
 
 #define SYSTEM_CLOCK 500000000
