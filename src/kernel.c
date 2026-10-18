@@ -1,10 +1,9 @@
 #include "common.h"
+#include "irq.h"
 #include "peripherals.h"
+#include "timer.h"
+#include "uart.h"
 #include "utils.h"
-
-void cpu1(void);
-void cpu2(void);
-void cpu3(void);
 
 /* fake uart sync */
 #define DELAY(s)                                       \
@@ -23,101 +22,37 @@ do {                                                                  \
     }                                                                 \
 } while(0)                                                            \
 
-void gpio_activate(void)
+#define TYPE(uart)                                  \
+do {                                                \
+    uart##_send_string("Type: ");                   \
+    while (1) {                                     \
+        uart##_send_char(uart##_receive_char());    \
+    }                                               \
+} while (0)                                         \
+
+void cpu1(void)
 {
-    unsigned int selector;
-    selector = read_reg32(GPFSEL1); // retrieve register to control gpio pins 10-19
-    selector &= ~(7u << 12);   // clear 14:12 bits
-    selector &= ~(7u << 15);   // clear 17:15 bits
-
-    // if uart is 1, we want to activate UART1, so we need
-    // to flip it to get 010; if it's 0, then we want 1
-    // so we obtain 100; not sure why i prefer it over
-    // just 4u >> uart
-    unsigned int func = 2u << (!(UART_SWITCH));
-
-    // select alternate function 0 or 5 to activate UART0 or UART1 (mini uart)
-    selector |= (func << 12);   // set   14:12 bits to: 100 or 010 (gpio 14)
-    selector |= (func << 15);   // set   17:15 bits to: 100 or 010 (gpio 15)
-    write_reg32(GPFSEL1, selector);
+    DELAY(100000);
+    uart0_send_string("[CPU1 Activated] ");
+    int curr_el = get_current_el();
+    REPORT_EL(curr_el, uart0);
 }
 
-void pup_pdn_resistor_disable(void)
+void cpu2(void)
 {
-    unsigned int selector;
-    selector = read_reg32(GPIO_PUP_PDN_CNTRL_REG0); // retrieve register to control gpio pup pdn resistors
-    selector &= ~(15u << 28);                  // clear pup / pdn resistors for pins: 14 -- 29:28; 15 -- 31:30
-    write_reg32(GPIO_PUP_PDN_CNTRL_REG0, selector);
+    DELAY(1000000);
+    uart0_send_string("[CPU2 Activated] ");
+    int curr_el = get_current_el();
+    REPORT_EL(curr_el, uart0);
 }
 
-void mini_uart_enable(void)
+void cpu3(void)
 {
-    write_reg32(AUX_ENABLES, 1);                      // enable access to mini uart registers
-    write_reg32(AUX_MU_CNTL_REG, 0);                  // disable t/r while configuring mini uart
-    write_reg32(AUX_MU_IER_REG, 0);                   // disable t/r interrupts for now
-    write_reg32(AUX_MU_LCR_REG, 3);                   // enable 8 bit mode
-    write_reg32(AUX_MU_IIR_REG, 0xc6);                // clear both FIFOs
-    write_reg32(AUX_MU_MCR_REG, 0);                   // set RTS high to prevent receiver from receriving 0x00
-    write_reg32(AUX_BAUD_REG, AUX_BAUD(BAUD_RATE));   // set baud rate to 115200
-    write_reg32(AUX_MU_CNTL_REG, 3);                  // enable t/r
-}
-
-char mini_uart_receive_char(void)
-{
-    while (!(read_reg32(AUX_MU_LSR_REG) & 0x01)); // wait until FIFO holds at least 1 byte
-    return read_reg32(AUX_MU_IO_REG) & 0xff;
-}
-
-void mini_uart_send_char(char c)
-{
-    while (!(read_reg32(AUX_MU_LSR_REG) & 0x20)); // wait until finished shifting out last bit
-    write_reg32(AUX_MU_IO_REG, c);
-}
-
-void mini_uart_send_string(const char *s)
-{
-    while (*s) {
-        mini_uart_send_char(*s++);
-    }
-}
-void uart0_enable(void)
-{
-    write_reg32(UART0_CR, 0);                              // disable uart0
-    write_reg32(UART0_IBRD, IBRD);                         // set integer part of bauddiv
-    write_reg32(UART0_FBRD, FBRD);                         // set fraction part of bauddiv
-    write_reg32(UART0_LCRH, ((3u << 5) | (1u << 4)));      // set WLEN to 8 bits and enable fifo
-    write_reg32(UART0_IMSC, 0);                            // disable interrupts
-    write_reg32(UART0_CR, ((1u << 9) | (1u << 8) | 1));    // enable t/r and uart0
-}
-
-char uart0_receive_char(void)
-{
-    while (read_reg32(UART0_FR) & (1u << 4));
-    return read_reg32(UART0_DR) & 0xff;
-}
-
-void uart0_send_char(char c)
-{
-    while (read_reg32(UART0_FR) & (1u << 5));
-    write_reg32(UART0_DR, c);
-}
-
-void uart0_send_string(const char *s)
-{
-    while (*s) {
-        uart0_send_char(*s++);
-    }
-}
-
-void uart_init(void)
-{
-    gpio_activate();
-    pup_pdn_resistor_disable();
-#if UART_SWITCH
-    mini_uart_enable();
-#else
-    uart0_enable();
-#endif
+    DELAY(10000000);
+    uart0_send_string("[CPU3 Activated] ");
+    int curr_el = get_current_el();
+    REPORT_EL(curr_el, uart0);
+    TYPE(uart0);
 }
 
 #define INIT_CPU(N, INSTR)                                                  \
@@ -126,41 +61,15 @@ do {                                                                        \
     write_addr64(WAKE_CPU##N, (unsigned long)&cpu123);                      \
 } while(0)                                                                  \
 
-void cpu1(void)
-{
-    DELAY(10000);
-    uart0_send_string("[CPU1 Activated] ");
-    int curr_el = get_current_el();
-    REPORT_EL(curr_el, uart0);
-}
+#define INIT_CPUS      \
+do {                   \
+    INIT_CPU(1, cpu1); \
+    INIT_CPU(2, cpu2); \
+    INIT_CPU(3, cpu3); \
+} while (0)            \
 
-void cpu2(void)
+void boot_log(void)
 {
-    DELAY(100000);
-    uart0_send_string("[CPU2 Activated] ");
-    int curr_el = get_current_el();
-    REPORT_EL(curr_el, uart0);
-}
-
-void cpu3(void)
-{
-    DELAY(1000000);
-    uart0_send_string("[CPU3 Activated] ");
-    int curr_el = get_current_el();
-    REPORT_EL(curr_el, uart0);
-    uart0_send_string("Type: ");
-    while (1) {
-#if UART_SWITCH
-        mini_uart_send_char(mini_uart_receive_char());
-#else
-        uart0_send_char(uart0_receive_char());
-#endif
-    }
-}
-
-void kernel_main(void)
-{
-    uart_init();
     int curr_el = get_current_el();
 #if UART_SWITCH
     mini_uart_send_string("\r\n");
@@ -175,17 +84,22 @@ void kernel_main(void)
     uart0_send_string("[CPU0 Activated]\r\n");
     uart0_send_string("[Booting]\r\n");
 #endif
-    DELAY(1000);
-    // INIT_CPU(1, cpu1);
-    // INIT_CPU(2, cpu2);
-    // INIT_CPU(3, cpu3);
-    uart0_send_string("Type: ");
-    while (1) {
-#if UART_SWITCH
-        mini_uart_send_char(mini_uart_receive_char());
+}
+
+void kernel_main(void)
+{
+    uart_init();
+    vector_init();
+    boot_log();
+
+    enable_timer_irq();
+    uart0_send_string("[arming one-shot timer]\r\n");
+    timer_arm(1000000);
+    __asm__ volatile("dsb sy" ::: "memory");
+    enable_irq();
+#if 0
+    INIT_CPUS;
 #else
-        uart0_send_char(uart0_receive_char());
+    TYPE(uart0);
 #endif
-    }
-    return;
 }
