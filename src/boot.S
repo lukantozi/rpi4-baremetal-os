@@ -26,9 +26,14 @@ _start:
     // configure el1: mmu and caches off; little-endian
     ldr     x0, =((3 << 28 | 3 << 22 | 1 << 20 | 1 << 11))
     msr     sctlr_el1, x0
-    // ensure EL1 runs in AArch64 state
+    // ensure el1 runs in AArch64 state
     mov     x0, #(1 << 31)
     msr     hcr_el2, x0
+    // allow el1 access physical timer and counter without
+    // trapping those accesses into el2
+    mrs     x0, cnthctl_el2
+    orr     x0, x0, 3
+    msr     cnthctl_el2, x0
     // set spsr_el2 for el1h
     mov     x0, #(7 << 6 | 5)
     msr     spsr_el2, x0

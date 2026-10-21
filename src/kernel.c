@@ -5,6 +5,8 @@
 #include "uart.h"
 #include "utils.h"
 
+#define GENERIC 1
+
 /* fake uart sync */
 #define DELAY(s)                                       \
 do {                                                   \
@@ -15,10 +17,10 @@ do {                                                   \
 #define REPORT_EL(el, uart)                                           \
 do {                                                                  \
     switch (el) {                                                     \
-        case 0: uart##_send_string("[Exception level 0]\r\n"); break; \
-        case 1: uart##_send_string("[Exception level 1]\r\n"); break; \
-        case 2: uart##_send_string("[Exception level 2]\r\n"); break; \
-        case 3: uart##_send_string("[Exception level 3]\r\n"); break; \
+        case 0: uart##_send_string("[Current EL] EL0\r\n"); break;    \
+        case 1: uart##_send_string("[Current EL] EL1\r\n"); break;    \
+        case 2: uart##_send_string("[Current EL] EL2\r\n"); break;    \
+        case 3: uart##_send_string("[Current EL] EL3\r\n"); break;    \
     }                                                                 \
 } while(0)                                                            \
 
@@ -33,7 +35,7 @@ do {                                                \
 void cpu1(void)
 {
     DELAY(100000);
-    uart0_send_string("[CPU1 Activated] ");
+    uart0_send_string("[CPU1] Activated\r\n");
     int curr_el = get_current_el();
     REPORT_EL(curr_el, uart0);
 }
@@ -41,7 +43,7 @@ void cpu1(void)
 void cpu2(void)
 {
     DELAY(1000000);
-    uart0_send_string("[CPU2 Activated] ");
+    uart0_send_string("[CPU2] Activated\r\n");
     int curr_el = get_current_el();
     REPORT_EL(curr_el, uart0);
 }
@@ -49,7 +51,7 @@ void cpu2(void)
 void cpu3(void)
 {
     DELAY(10000000);
-    uart0_send_string("[CPU3 Activated] ");
+    uart0_send_string("[CPU3] Activated\r\n");
     int curr_el = get_current_el();
     REPORT_EL(curr_el, uart0);
     TYPE(uart0);
@@ -73,17 +75,24 @@ void boot_log(void)
     int curr_el = get_current_el();
 #if UART_SWITCH
     mini_uart_send_string("\r\n");
-    mini_uart_send_string("[Mini UART Enabled]\r\n");
+    mini_uart_send_string("[UART1] Enabled\r\n");
     REPORT_EL(curr_el, mini_uart);
-    mini_uart_send_string("[Booting]\r\n");
+    mini_uart_send_string("[Kernel] Booting\r\n");
     mini_uart_send_string("Type: ");
 #else
     uart0_send_string("\r\n");
-    uart0_send_string("[UART0 Enabled]\r\n");
+    uart0_send_string("[UART0] Enabled\r\n");
     REPORT_EL(curr_el, uart0);
-    uart0_send_string("[CPU0 Activated]\r\n");
-    uart0_send_string("[Booting]\r\n");
+    uart0_send_string("[CPU0] Activated\r\n");
+    uart0_send_string("[Kernel] Booting\r\n");
 #endif
+}
+
+void gic_init(void)
+{
+    write_reg32(GICC_PMR, 0xffu);                      
+    write_reg32(GICD_CTLR, read_reg32(GICD_CTLR) | 1u);
+    write_reg32(GICC_CTLR, read_reg32(GICC_CTLR) | 1u);
 }
 
 void kernel_main(void)
@@ -91,10 +100,15 @@ void kernel_main(void)
     uart_init();
     vector_init();
     boot_log();
-
+    disable_irq();
+#if GENERIC == 1 
+    gic_init();
+    enable_generic_timer_irq();
+    timer_generic_arm(1);
+#else // SYSTEM
     enable_timer_irq();
-    uart0_send_string("[arming one-shot timer]\r\n");
     timer_arm(1000000);
+#endif
     __asm__ volatile("dsb sy" ::: "memory");
     enable_irq();
 #if 0

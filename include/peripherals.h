@@ -44,9 +44,16 @@
  */
 #define GICD_BASE               0xff841000 // bcm2711.dtsi (43-63)
 #define GICC_BASE               0xff842000
+#define GICD_CTLR               (GICD_BASE)
+#define GICC_CTLR               (GICC_BASE)
+#define GICC_PMR                (GICC_BASE + 0x004)
 
 #define SYS_TIMER_IRQ1          97
+#define GENERIC_TIMER_IRQ       30
 #define GICD_ISENABLER3_BIT     (SYS_TIMER_IRQ1 % 32)
+
+#define GICD_ISENABLER0         (GICD_BASE + 0x100)
+#define GICD_ISENABLER0_BIT     (GENERIC_TIMER_IRQ % 32)
 
 #define GICD_ISENABLER3         (GICD_BASE + 0x100 + (4 * (SYS_TIMER_IRQ1 / 32)))
 #define GICD_ISPENDR3           (GICD_BASE + 0x200 + (4 * (SYS_TIMER_IRQ1 / 32)))
