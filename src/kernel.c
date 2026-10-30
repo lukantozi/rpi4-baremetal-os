@@ -100,6 +100,7 @@ void kernel_main(void)
     uart_init();
     vector_init();
     boot_log();
+#if 1
     disable_irq();
 #if GENERIC == 1 
     gic_init();
@@ -109,11 +110,16 @@ void kernel_main(void)
     enable_timer_irq();
     timer_arm(1000000);
 #endif
+    enable_uart0_irq();
     __asm__ volatile("dsb sy" ::: "memory");
     enable_irq();
+#endif // uart test
 #if 0
     INIT_CPUS;
 #else
-    TYPE(uart0);
+    // TYPE(uart0);
+    uart0_send_string("Type: ");
+    while (1) {
+    }
 #endif
 }

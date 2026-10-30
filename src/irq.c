@@ -45,14 +45,31 @@ void handle_irq(void)
     unsigned int iid = iar & 0x3ff; // extract 9:0 (interrupt id)
 
     while (iid < 1020) {
-        if (iid == SYS_TIMER_IRQ1)
-            timer_handle();
-        else if (iid == GENERIC_TIMER_IRQ)
-            timer_generic_handle();
+        switch (iid) {
+            case SYS_TIMER_IRQ1:
+                timer_handle();
+                break;
+            case GENERIC_TIMER_IRQ:
+                timer_generic_handle();
+                break;
+            case UART0_IRQ:
+                uart0_handle();
+                break;
+        }
 
         write_reg32(GICC_EOIR, iar); // hey gic, we're done
 
         iar = read_reg32(GICC_IAR);
         iid = iar & 0x3ff;
     }
+}
+
+void enable_uart0_irq(void)
+{
+    unsigned int target = read_reg32(GICD_ITARGETSR38);
+    target &= ~(0xff << 8); // clear 15:8
+    target |= (1u << 8);    // set bit 8 to point at cpu0
+
+    write_reg32(GICD_ITARGETSR38, target);
+    write_reg32(GICD_ISENABLER4,  (1u << UART0_IRQ_BIT));
 }

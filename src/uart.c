@@ -59,13 +59,14 @@ void mini_uart_send_string(const char *s)
         mini_uart_send_char(*s++);
     }
 }
+
 void uart0_enable(void)
 {
     write_reg32(UART0_CR, 0);                              // disable uart0
     write_reg32(UART0_IBRD, IBRD);                         // set integer part of bauddiv
     write_reg32(UART0_FBRD, FBRD);                         // set fraction part of bauddiv
-    write_reg32(UART0_LCRH, ((3u << 5) | (1u << 4)));      // set WLEN to 8 bits and enable fifo
-    write_reg32(UART0_IMSC, 0);                            // disable interrupts
+    write_reg32(UART0_LCRH, ((3u << 5) | (0u << 4)));      // set WLEN to 8 bits and disable (0) fifo
+    write_reg32(UART0_IMSC, (1 << 4));                     // enable receive interrupt
     write_reg32(UART0_CR, ((1u << 9) | (1u << 8) | 1));    // enable t/r and uart0
 }
 
@@ -86,6 +87,12 @@ void uart0_send_string(const char *s)
     while (*s) {
         uart0_send_char(*s++);
     }
+}
+
+void uart0_handle(void)
+{
+    if (read_reg32(UART0_MIS) & (1 << 4))
+        uart0_send_char(read_reg32(UART0_DR) & 0xff);
 }
 
 void uart_init(void)
