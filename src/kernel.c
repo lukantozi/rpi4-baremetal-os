@@ -5,8 +5,6 @@
 #include "uart.h"
 #include "utils.h"
 
-#define GENERIC 1
-
 /* fake uart sync */
 #define DELAY(s)                                       \
 do {                                                   \
@@ -54,7 +52,9 @@ void cpu3(void)
     uart0_send_string("[CPU3] Activated\r\n");
     int curr_el = get_current_el();
     REPORT_EL(curr_el, uart0);
-    TYPE(uart0);
+    uart0_send_string("Type: ");
+    while (1) {
+    }
 }
 
 #define INIT_CPU(N, INSTR)                                                  \
@@ -97,13 +97,12 @@ void gic_init(void)
 
 void kernel_main(void)
 {
+    disable_irq();
     uart_init();
     vector_init();
     boot_log();
-#if 1
-    disable_irq();
-#if GENERIC == 1 
     gic_init();
+#if GENERIC == 1
     enable_generic_timer_irq();
     timer_generic_arm(1);
 #else // SYSTEM
@@ -113,11 +112,9 @@ void kernel_main(void)
     enable_uart0_irq();
     __asm__ volatile("dsb sy" ::: "memory");
     enable_irq();
-#endif // uart test
 #if 0
     INIT_CPUS;
 #else
-    // TYPE(uart0);
     uart0_send_string("Type: ");
     while (1) {
     }

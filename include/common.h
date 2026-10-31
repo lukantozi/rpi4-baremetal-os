@@ -5,6 +5,10 @@
 #define UART_SWITCH 0
 #endif
 
+#ifndef GENERIC
+#define GENERIC 0
+#endif
+
 #define SYSTEM_CLOCK 500000000
 #define BAUD_RATE 115200
 #define AUX_BAUD(BAUD_RATE) (SYSTEM_CLOCK / ((BAUD_RATE) * 8) - 1)

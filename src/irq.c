@@ -11,24 +11,11 @@ void enable_timer_irq(void)
 
     write_reg32(GICD_ITARGETSR24, target);
     write_reg32(GICD_ISENABLER3,  (1u << GICD_ISENABLER3_BIT));
-
-    unsigned int enabled = read_reg32(GICD_ISENABLER3);
-
-    if (enabled & (1u << GICD_ISENABLER3_BIT))
-        uart0_send_string("[System timer] IRQ enable reads 1\r\n");
-    else
-        uart0_send_string("[System timer] IRQ enable reads 0\r\n");
 }
 
 void enable_generic_timer_irq(void)
 {
     write_reg32(GICD_ISENABLER0, (1u << GICD_ISENABLER0_BIT));
-    // unsigned int enable = read_reg32(GICD_ISENABLER0); 
-
-    // if (enable & (1u << 30))
-    //     uart0_send_string("[GICD_ISENABLER0] read bit (30) enabled\r\n");
-    // else
-    //     uart0_send_string("[GICD_ISENABLER0] read bit (30) not enabled\r\n");
 }
 
 void show_invalid_entry_message(int type, unsigned long esr, unsigned long addr)
