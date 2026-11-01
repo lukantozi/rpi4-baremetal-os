@@ -1,5 +1,6 @@
 #include "common.h"
 #include "utils.h"
+#include "uart.h"
 #include "peripherals.h"
 
 void gpio_activate(void)
@@ -88,6 +89,23 @@ void uart0_send_string(const char *s)
         uart0_send_char(*s++);
     }
 }
+
+void uart0_send_uint32(unsigned int data)
+{
+    char hex[] = "0123456789abcdef";
+    // for (int i = 28; i >= 0; i -=4) {
+    //     uart0_send_char(hex[(data >> i) & 0xf]);
+    // }
+    uart0_send_char(hex[(data >> 28) & 0xf]);
+    uart0_send_char(hex[(data >> 24) & 0xf]);
+    uart0_send_char(hex[(data >> 20) & 0xf]);
+    uart0_send_char(hex[(data >> 16) & 0xf]);
+    uart0_send_char(hex[(data >> 12) & 0xf]);
+    uart0_send_char(hex[(data >> 8)  & 0xf]);
+    uart0_send_char(hex[(data >> 4)  & 0xf]);
+    uart0_send_char(hex[(data >> 0)  & 0xf]);
+}
+
 
 void uart0_handle(void)
 {

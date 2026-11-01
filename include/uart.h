@@ -7,6 +7,7 @@ void mini_uart_send_string(const char *s);
 char uart0_receive_char(void);
 void uart0_send_char(char c);
 void uart0_send_string(const char *s);
+void uart0_send_uint32(unsigned int data);
 void uart0_handle(void);
 void uart_init(void);
 

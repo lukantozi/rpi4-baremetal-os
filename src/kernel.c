@@ -1,5 +1,7 @@
 #include "common.h"
+#include "framebuffer.h"
 #include "irq.h"
+#include "mail.h"
 #include "peripherals.h"
 #include "timer.h"
 #include "uart.h"
@@ -95,12 +97,21 @@ void gic_init(void)
     write_reg32(GICC_CTLR, read_reg32(GICC_CTLR) | 1u);
 }
 
+void uart0_send_uint32_test(void)
+{
+    unsigned int test = 0x1234abcd;
+    uart0_send_string("[Test] ");
+    uart0_send_uint32(test);
+    uart0_send_string("\r\n");
+}
+
 void kernel_main(void)
 {
     disable_irq();
     uart_init();
     vector_init();
     boot_log();
+    framebuffer_init();
     gic_init();
 #if GENERIC == 1
     enable_generic_timer_irq();

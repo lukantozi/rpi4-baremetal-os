@@ -9,6 +9,7 @@
 #define GPCLR1                  (GPIO_BASE + 0x00002c)
 #define GPIO_PUP_PDN_CNTRL_REG0 (GPIO_BASE + 0x0000e4)
 
+/* uarts */
 #define UART0_BASE              (PBASE      + 0x201000)
 #define UART0_DR                UART0_BASE
 #define UART0_FR                (UART0_BASE + 0x000018)
@@ -32,6 +33,7 @@
 #define AUX_MU_CNTL_REG         (AUX_BASE + 0x000060)
 #define AUX_BAUD_REG            (AUX_BASE + 0x000068)
 
+/* timers and irq */
 #define SYS_TIMER_REG           (PBASE + 0x003000)
 #define SYS_TIMER_CS            (SYS_TIMER_REG)
 #define SYS_TIMER_CLO           (SYS_TIMER_REG + 0x04)
@@ -70,5 +72,18 @@
 
 #define GICC_IAR                (GICC_BASE + 0xc)
 #define GICC_EOIR               (GICC_BASE + 0x10)
+
+/* vcore mailbox */
+#define MAIL_BASE               (PBASE + 0xb880)
+#define MAIL_READ               (MAIL_BASE + 0x00)
+#define MAIL_STATUS             (MAIL_BASE + 0x18)
+#define MAIL_WRITE              (MAIL_BASE + 0x20)
+
+#define MAIL_FULL               0x80000000
+#define MAIL_EMPTY              0x40000000
+
+/* frame buffer */
+#define FB_REQ_OK               0x80000000
+#define FB_PDISPLAY_SET         0x00048003
 
 #endif
