@@ -126,6 +126,15 @@ void kernel_main(void)
 #if 0
     INIT_CPUS;
 #else
+    /* draw rect */
+    for (int j = 100; j < 200; j++) {
+        for (int i = 20; i < 100; i++) {
+            draw_pixel(i, j, 0x3);
+        }
+        for (int i = 20; i < 100; i++) {
+            draw_pixel(i, j, 0x5);
+        }
+    }
     uart0_send_string("Type: ");
     while (1) {
     }

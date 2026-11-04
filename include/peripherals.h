@@ -73,17 +73,4 @@
 #define GICC_IAR                (GICC_BASE + 0xc)
 #define GICC_EOIR               (GICC_BASE + 0x10)
 
-/* vcore mailbox */
-#define MAIL_BASE               (PBASE + 0xb880)
-#define MAIL_READ               (MAIL_BASE + 0x00)
-#define MAIL_STATUS             (MAIL_BASE + 0x18)
-#define MAIL_WRITE              (MAIL_BASE + 0x20)
-
-#define MAIL_FULL               0x80000000
-#define MAIL_EMPTY              0x40000000
-
-/* frame buffer */
-#define FB_REQ_OK               0x80000000
-#define FB_PDISPLAY_SET         0x00048003
-
 #endif

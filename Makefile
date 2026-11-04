@@ -14,7 +14,7 @@ GENERIC ?= 0
 
 QEMU	:= qemu-system-aarch64
 QFLAGS	:= -machine raspi4b -cpu cortex-a72 -dtb bcm2711-rpi-4-b.dtb -m 2G -kernel $(KERNEL) \
-		   -nographic -drive format=raw,file=rpi4.img
+		   -serial stdio -drive format=raw,file=rpi4.img -display gtk
 
 .PHONY: all qemu flash run clean
 
