@@ -1,5 +1,5 @@
 #include "common.h"
-#include "framebuffer.h"
+#include "fb.h"
 #include "irq.h"
 #include "mail.h"
 #include "peripherals.h"
@@ -111,7 +111,7 @@ void kernel_main(void)
     uart_init();
     vector_init();
     boot_log();
-    framebuffer_init();
+    fb_init();
     gic_init();
 #if GENERIC == 1
     enable_generic_timer_irq();
@@ -126,15 +126,7 @@ void kernel_main(void)
 #if 0
     INIT_CPUS;
 #else
-    /* draw rect */
-    for (int j = 100; j < 200; j++) {
-        for (int i = 20; i < 100; i++) {
-            draw_pixel(i, j, 0x3);
-        }
-        for (int i = 20; i < 100; i++) {
-            draw_pixel(i, j, 0x5);
-        }
-    }
+    draw_rect(300, 200, 200, 5);
     uart0_send_string("Type: ");
     while (1) {
     }

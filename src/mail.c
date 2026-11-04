@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "uart.h"
 
-volatile unsigned int mailbox[36] __attribute__((aligned(16)));
+volatile unsigned int mailbox[49] __attribute__((aligned(16)));
 
 // reference: https://github.com/raspberrypi/firmware/wiki/Accessing-mailboxes
 unsigned int mailbox_read(unsigned char channel_req)

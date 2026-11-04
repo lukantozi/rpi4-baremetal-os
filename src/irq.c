@@ -2,6 +2,7 @@
 #include "peripherals.h"
 #include "timer.h"
 #include "uart.h"
+#include "irq.h"
 
 void enable_timer_irq(void)
 {
