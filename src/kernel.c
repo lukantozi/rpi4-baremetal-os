@@ -112,6 +112,7 @@ void kernel_main(void)
     vector_init();
     boot_log();
     fb_init();
+    board_info();
     gic_init();
 #if GENERIC == 1
     enable_generic_timer_irq();
@@ -126,7 +127,9 @@ void kernel_main(void)
 #if 0
     INIT_CPUS;
 #else
-    draw_rect(300, 200, 200, 5);
+    uart0_send_uint32(display.width);
+    uart0_send_string("\r\n");
+    draw_rect(300, 200, 200, 200, 5);
     uart0_send_string("Type: ");
     while (1) {
     }

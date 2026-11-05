@@ -9,7 +9,25 @@
 #define MB_SET_OFFSET           0x00048009
 
 void fb_init(void);
+void board_info(void);
 void draw_pixel(int x, int y, unsigned char col);
-void draw_rect(int st, int xl, int yl, unsigned int col);
+void draw_rect(int xs, int ys, int xl, int yl, unsigned int col);
+
+typedef struct {
+    unsigned char *buffer;
+    unsigned int width;
+    unsigned int height;
+    unsigned int pitch;
+    unsigned int pixord;
+} Display;
+
+typedef struct {
+    unsigned int firmware;
+    unsigned long mac;
+    unsigned long serial;
+} Board;
+
+extern Display display;
+extern Board board;
 
 #endif
