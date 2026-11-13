@@ -35,10 +35,6 @@ void mailbox_end(void)
     mailbox[0] = mb_ind * 4;
 }
 
-void mailbox_setup_request(void)
-{
-}
-
 Display display;
 Board board;
 
@@ -98,18 +94,18 @@ void fb_init(void)
     mailbox[offset+1] = 0; // y
 
     unsigned int phys = mailbox_add_tag(MB_SET_PDISPLAY, 8);
-    mailbox[phys] = 800;
-    mailbox[phys+1] = 600;
+    mailbox[phys] = 1920;
+    mailbox[phys+1] = 1200;
 
     unsigned int virt = mailbox_add_tag(MB_SET_VDISPLAY, 8);
-    mailbox[virt] = 800;
-    mailbox[virt+1] = 600;
+    mailbox[virt] = 1920;
+    mailbox[virt+1] = 1200;
 
     unsigned int depth = mailbox_add_tag(MB_SET_DEPTH, 4);
     mailbox[depth] = 32; // bits per pix
 
     unsigned int ord = mailbox_add_tag(MB_SET_ORDER, 4);
-    mailbox[ord] = 0; // BRG*
+    mailbox[ord] = 0; // BGR*
 
     unsigned int buf = mailbox_add_tag(MB_ALLOC_BUFFER, 8);
     mailbox[buf] = 16;   // 16-char fb align
@@ -188,5 +184,40 @@ void draw_rect(int xs, int ys, int xl, int yl, unsigned int col)
         for (int y = ys; y < ys + yl; y++) {
             draw_pixel(x, y, col);
         }
+    }
+}
+
+void draw_char(int x, int y, unsigned char c, unsigned int col)
+{
+    int offset = (c % GLYPH_NUM) * GLYPH_BYTES;
+    unsigned char *symbol = (unsigned char *)&font8x8_basic + offset;
+    const unsigned int fg = col & 0x0f;
+    const unsigned int bg = (col & 0xf0) >> 4;
+    unsigned char px_col;
+
+    for (int yp = 0; yp < GLYPH_HEIGHT; yp++) {
+        for (int xp = 0; xp < GLYPH_WIDTH; xp++) {
+            px_col = *symbol & (1 << xp) ? fg : bg;
+            draw_pixel(x+xp, y+yp, px_col);
+        }
+        symbol++;
+    }
+}
+
+void draw_char_block(int x, int y, unsigned int col)
+{
+    for (int yp = 0; yp < GLYPH_HEIGHT; yp++) {
+        for (int xp = 0; xp < GLYPH_WIDTH; xp++) {
+            draw_pixel(x+xp, y+yp, col);
+        }
+    }
+}
+
+void draw_string(int x, int y, char *str, unsigned int col)
+{
+    while (*str) {
+        draw_char(x, y, (unsigned char)*str, col);
+        x += GLYPH_WIDTH;
+        str++;
     }
 }

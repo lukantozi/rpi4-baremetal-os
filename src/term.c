@@ -1,11 +1,22 @@
 #include "term.h"
 
-const unsigned int base16[] = {
-    0x090300, 0xa5a2a2, 0xa5a2a2, 0xa5a2a2,
-    0x090300, 0x01a0e4, 0x5c5855, 0x01a0e4,
-    0xb5e4f4, 0x01a252, 0xa16a94, 0xdb2d20,
-    0xf7f7f7, 0xfded02, 0xb5e4f4, 0x01a252,
-    0xa16a94, 0xdb2d20, 0xa5a2a2, 0xfded02
+const unsigned int base16[16] = {
+    0x090300, // dark bg
+    0xdb2d20, // red
+    0x01a252, // green
+    0xfded02, // yellow
+    0x01a0e4, // blue
+    0xa16a94, // pink/purple
+    0xb5e4f4, // light blue
+    0xa5a2a2, // light grey
+    0x5c5855, // dark grey
+    0xdb2d20, // red
+    0x01a252, // green
+    0xfded02, // yellow
+    0x01a0e4, // blue
+    0xa16a94, // pink/purple
+    0xb5e4f4, // light blue
+    0xf7f7f7, // white
 };
 
 // https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h

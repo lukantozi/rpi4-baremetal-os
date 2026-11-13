@@ -3,4 +3,4 @@ uart_2ndstage=0
 enable_uart=1
 
 [pi4]
-kernel=kernel8-rpi4.img
+kernel=kernel8.img

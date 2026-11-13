@@ -105,6 +105,9 @@ void uart0_send_uint32_test(void)
     uart0_send_string("\r\n");
 }
 
+int text_x = 5;
+int text_y = 5;
+
 void kernel_main(void)
 {
     disable_irq();
@@ -129,7 +132,10 @@ void kernel_main(void)
 #else
     uart0_send_uint32(display.width);
     uart0_send_string("\r\n");
-    draw_rect(300, 200, 200, 200, 5);
+    draw_rect(10, 200, 50, 50, 1);
+    draw_string(text_x, text_y, "[MOS] Init", 0xf);
+    draw_char_block(text_x, text_y+text_yn, 0xf);
+    line_end[0] = 10;
     uart0_send_string("Type: ");
     while (1) {
     }

@@ -22,4 +22,8 @@ extern unsigned long spin_cpu3;
 /* from entry.S */
 extern unsigned long vectors;
 
+/* from kernel.c */
+extern int text_x;
+extern int text_y;
+
 #endif

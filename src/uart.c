@@ -1,7 +1,12 @@
 #include "common.h"
 #include "utils.h"
 #include "uart.h"
+#include "term.h"
 #include "peripherals.h"
+#include "fb.h"
+
+int text_xn = 0;
+int text_yn = 12;
 
 void gpio_activate(void)
 {
@@ -106,11 +111,55 @@ void uart0_send_uint32(unsigned int data)
     uart0_send_char(hex[(data >> 0)  & 0xf]);
 }
 
+int cursor_row = 1;
+int cursor_col = 0;
+int line_end[] = {0};
 
 void uart0_handle(void)
 {
-    if (read_reg32(UART0_MIS) & (1 << 4))
-        uart0_send_char(read_reg32(UART0_DR) & 0xff);
+    if (read_reg32(UART0_MIS) & (1 << 4)) {
+        unsigned char c = read_reg32(UART0_DR) & 0xff;
+        uart0_send_char(c);
+        switch (c) {
+            case 0x7f: // backspace
+                draw_char_block(text_x+text_xn, text_y+text_yn, 0x0);
+                if (text_x + text_xn == 5) {
+                    uart0_send_string("x 0 edge\r\n");
+                    if (text_y + text_yn == 5) {
+                        draw_char_block(text_x+text_xn, text_y+text_yn, 0xf);
+                        return;
+                    }
+                    text_yn -= 12;
+                    int prev_col = line_end[cursor_row-1];
+                    line_end[cursor_row--] = cursor_col;
+                    text_xn = prev_col * 8;
+                    cursor_col = prev_col;
+                    draw_char_block(text_x+text_xn, text_y+text_yn, 0xf);
+                } else {
+                    text_xn -= 8;
+                    cursor_col--;
+                    draw_char_block(text_x+text_xn, text_y+text_yn, 0xf);
+                }
+                break;
+            case 0x0d: // \r
+                draw_char_block(text_x+text_xn, text_y+text_yn, 0x0);
+                int col = line_end[cursor_row+1];
+                line_end[cursor_row++] = cursor_col;
+                cursor_col = 0;
+                text_x = 5;
+                if (col)
+                    text_x = col * 8;
+                text_xn = 0;
+                text_yn += 12;
+                draw_char_block(text_x+text_xn, text_y+text_yn, 0xf);
+                break;
+            default: // write char
+                draw_char(text_x+text_xn, text_y+text_yn, c, 0xf);
+                text_xn += 8;
+                draw_char_block(text_x+text_xn, text_y+text_yn, 0xf);
+                cursor_col++;
+        }
+    }
 }
 
 void uart_init(void)

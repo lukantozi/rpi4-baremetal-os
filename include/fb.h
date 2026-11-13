@@ -12,6 +12,9 @@ void fb_init(void);
 void board_info(void);
 void draw_pixel(int x, int y, unsigned char col);
 void draw_rect(int xs, int ys, int xl, int yl, unsigned int col);
+void draw_char(int x, int y, unsigned char c, unsigned int col);
+void draw_char_block(int x, int y, unsigned int col);
+void draw_string(int x, int y, char *str, unsigned int col);
 
 typedef struct {
     unsigned char *buffer;
