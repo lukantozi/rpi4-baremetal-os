@@ -105,8 +105,15 @@ void uart0_send_uint32_test(void)
     uart0_send_string("\r\n");
 }
 
-int text_x = 5;
-int text_y = 5;
+int symb_x = 5;
+int symb_y = 5;
+
+void draw_chars_stuff(void)
+{
+    draw_string(symb_x, symb_y, "[MOS] Init", 0xf);
+    draw_block(symb_x, symb_y+symb_yn, 0xf);
+    line_end[0] = 10;
+}
 
 void kernel_main(void)
 {
@@ -133,9 +140,7 @@ void kernel_main(void)
     uart0_send_uint32(display.width);
     uart0_send_string("\r\n");
     draw_rect(10, 200, 50, 50, 1);
-    draw_string(text_x, text_y, "[MOS] Init", 0xf);
-    draw_char_block(text_x, text_y+text_yn, 0xf);
-    line_end[0] = 10;
+    draw_chars_stuff();
     uart0_send_string("Type: ");
     while (1) {
     }

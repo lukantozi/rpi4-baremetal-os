@@ -51,7 +51,4 @@ void uart0_send_uint32(unsigned int data);
 void uart0_handle(void);
 void uart_init(void);
 
-extern int text_yn;
-extern int line_end[];
-
 #endif

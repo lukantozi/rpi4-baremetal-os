@@ -1,11 +1,17 @@
-#include "utils.h"
-#include "uart.h"
-#include "mail.h"
-#include "term.h"
+#include "common.h"
 #include "fb.h"
+#include "mail.h"
 #include "peripherals.h"
+#include "term.h"
+#include "uart.h"
+#include "utils.h"
 
 unsigned int mb_ind;
+int cursor_row = 1;
+int cursor_col = 0;
+int line_end[128] = {0};
+int symb_xn = 0;
+int symb_yn = 12;
 
 void mailbox_begin(void)
 {
@@ -204,12 +210,73 @@ void draw_char(int x, int y, unsigned char c, unsigned int col)
     }
 }
 
-void draw_char_block(int x, int y, unsigned int col)
+void draw_block(int x, int y, unsigned int col)
 {
     for (int yp = 0; yp < GLYPH_HEIGHT; yp++) {
         for (int xp = 0; xp < GLYPH_WIDTH; xp++) {
             draw_pixel(x+xp, y+yp, col);
         }
+    }
+}
+
+void draw_char_erase(void)
+{
+    symb_xn -= XSTEP;
+    cursor_col--;
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
+}
+
+void draw_char_erase_last(void)
+{
+    symb_yn -= YSTEP;
+    int col = line_end[cursor_row-1];
+    line_end[cursor_row--] = cursor_col;
+    symb_xn = col * XSTEP;
+    cursor_col = col;
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
+}
+
+void draw_cursor_newline(void)
+{
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0x0);
+    int col = line_end[cursor_row+1] * XSTEP;
+    line_end[cursor_row++] = cursor_col;
+    cursor_col = NEWLINE;
+    symb_x = XSTART;
+    symb_x = col ? col : symb_x;
+    symb_xn = NEWLINE;
+    symb_yn += YSTEP;
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
+}
+
+void draw_char_right(unsigned char c)
+{
+    draw_char(symb_x+symb_xn, symb_y+symb_yn, c, 0xf);
+    symb_xn += XSTEP;
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
+    cursor_col++;
+}
+
+void draw_char_process(unsigned char c)
+{
+    switch (c) {
+        case 0x7f: // backspace
+            draw_block(symb_x+symb_xn, symb_y+symb_yn, 0x0);
+            if (symb_x + symb_xn != 5) {
+                draw_char_erase();
+                return;
+            }
+            if (symb_y + symb_yn == 5) {
+                draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
+                return;
+            }
+            draw_char_erase_last();
+            break;
+        case 0x0d: // \r
+            draw_cursor_newline();
+            break;
+        default: // write char
+            draw_char_right(c);
     }
 }
 

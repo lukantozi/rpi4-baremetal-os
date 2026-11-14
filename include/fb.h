@@ -13,7 +13,8 @@ void board_info(void);
 void draw_pixel(int x, int y, unsigned char col);
 void draw_rect(int xs, int ys, int xl, int yl, unsigned int col);
 void draw_char(int x, int y, unsigned char c, unsigned int col);
-void draw_char_block(int x, int y, unsigned int col);
+void draw_block(int x, int y, unsigned int col);
+void draw_char_process(unsigned char c);
 void draw_string(int x, int y, char *str, unsigned int col);
 
 typedef struct {
@@ -32,5 +33,13 @@ typedef struct {
 
 extern Display display;
 extern Board board;
+
+extern int symb_yn;
+extern int line_end[];
+
+#define XSTEP 8
+#define YSTEP 12
+#define XSTART 5
+#define NEWLINE 0
 
 #endif
