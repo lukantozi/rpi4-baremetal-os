@@ -10,12 +10,17 @@
 
 void fb_init(void);
 void board_info(void);
-void draw_pixel(int x, int y, unsigned char col);
-void draw_rect(int xs, int ys, int xl, int yl, unsigned int col);
-void draw_char(int x, int y, unsigned char c, unsigned int col);
-void draw_block(int x, int y, unsigned int col);
+int draw_pixel(int x, int y, unsigned char col);
+int draw_rect(int xs, int ys, int xl, int yl, unsigned int col);
+int draw_rect_frame(int xs, int ys, int xl, int yl, unsigned int col);
+int draw_char(int x, int y, unsigned char c, unsigned int col);
+void draw_char_right(unsigned char c);
+int draw_block(int x, int y, unsigned int col);
 void draw_char_process(unsigned char c);
-void draw_string(int x, int y, char *str, unsigned int col);
+void draw_string(const char *str);
+void draw_cursor_newline(void);
+void draw_clear(void);
+void draw_color_band(void);
 
 typedef struct {
     unsigned char *buffer;
@@ -34,12 +39,14 @@ typedef struct {
 extern Display display;
 extern Board board;
 
+extern int symb_xn;
 extern int symb_yn;
 extern int line_end[];
 
 #define XSTEP 8
 #define YSTEP 12
 #define XSTART 5
+#define YSTART 5
 #define NEWLINE 0
 
 #endif

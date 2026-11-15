@@ -7,11 +7,21 @@
 #include "utils.h"
 
 unsigned int mb_ind;
-int cursor_row = 1;
+int cursor_row = 0;
 int cursor_col = 0;
 int line_end[128] = {0};
 int symb_xn = 0;
-int symb_yn = 12;
+int symb_yn = 0;
+unsigned char command[512] = {0};
+unsigned int command_len = 0;
+
+#define PIXEL_VALIDATE(x, y)                                         \
+do {                                                                 \
+    if (x < 0 || x > 1920 || y < 0 || y > 1200) {                    \
+        uart0_send_string("trying to draw pixel outside of fb\r\n"); \
+        return -1;                                                   \
+    }                                                                \
+} while (0)
 
 void mailbox_begin(void)
 {
@@ -178,23 +188,47 @@ void board_info(void)
     }
 }
 
-void draw_pixel(int x, int y, unsigned char col)
+int draw_pixel(int x, int y, unsigned char col)
 {
+    PIXEL_VALIDATE(x, y);
     int loc = (y * display.pitch) + (x * (32 / 8));
     *((unsigned int *)(display.buffer + loc)) = base16[col & 0x0f];
+    return 1;
 }
 
-void draw_rect(int xs, int ys, int xl, int yl, unsigned int col)
+int draw_rect(int xs, int ys, int xl, int yl, unsigned int col)
 {
+    PIXEL_VALIDATE(xs, ys);
+    PIXEL_VALIDATE(xs + xl, ys + yl);
     for (int x = xs; x < xs + xl; x++) {
         for (int y = ys; y < ys + yl; y++) {
             draw_pixel(x, y, col);
         }
     }
+    return 1;
 }
 
-void draw_char(int x, int y, unsigned char c, unsigned int col)
+int draw_rect_frame(int xs, int ys, int xl, int yl, unsigned int col)
 {
+    PIXEL_VALIDATE(xs, ys);
+    PIXEL_VALIDATE(xs + xl, ys + yl);
+
+    for (int x = xs; x < xs + xl; x++) {
+        draw_pixel(x, ys, col);
+        draw_pixel(x, ys + yl - 1, col);
+    }
+
+    for (int y = ys; y < ys + yl; y++) {
+        draw_pixel(xs, y, col);
+        draw_pixel(xs + xl - 1, y, col);
+    }
+
+    return 1;
+}
+
+int draw_char(int x, int y, unsigned char c, unsigned int col)
+{
+    PIXEL_VALIDATE(x, y);
     int offset = (c % GLYPH_NUM) * GLYPH_BYTES;
     unsigned char *symbol = (unsigned char *)&font8x8_basic + offset;
     const unsigned int fg = col & 0x0f;
@@ -208,15 +242,18 @@ void draw_char(int x, int y, unsigned char c, unsigned int col)
         }
         symbol++;
     }
+    return 1;
 }
 
-void draw_block(int x, int y, unsigned int col)
+int draw_block(int x, int y, unsigned int col)
 {
+    PIXEL_VALIDATE(x, y);
     for (int yp = 0; yp < GLYPH_HEIGHT; yp++) {
         for (int xp = 0; xp < GLYPH_WIDTH; xp++) {
             draw_pixel(x+xp, y+yp, col);
         }
     }
+    return 1;
 }
 
 void draw_char_erase(void)
@@ -239,12 +276,11 @@ void draw_char_erase_last(void)
 void draw_cursor_newline(void)
 {
     draw_block(symb_x+symb_xn, symb_y+symb_yn, 0x0);
-    int col = line_end[cursor_row+1] * XSTEP;
+    int col = line_end[cursor_row+1];
     line_end[cursor_row++] = cursor_col;
-    cursor_col = NEWLINE;
+    cursor_col = col;
     symb_x = XSTART;
-    symb_x = col ? col : symb_x;
-    symb_xn = NEWLINE;
+    symb_xn = col * XSTEP;
     symb_yn += YSTEP;
     draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
 }
@@ -257,10 +293,119 @@ void draw_char_right(unsigned char c)
     cursor_col++;
 }
 
+void draw_mac_address(void)
+{
+    char hex[] = "0123456789abcdef";
+    draw_char_right(hex[board.mac & 0xf]);
+    draw_char_right(hex[(board.mac >> 4) & 0xf]);
+    draw_char_right(':');
+    draw_char_right(hex[(board.mac >> 8) & 0xf]);
+    draw_char_right(hex[(board.mac >> 12) & 0xf]);
+    draw_char_right(':');
+    draw_char_right(hex[(board.mac >> 16) & 0xf]);
+    draw_char_right(hex[(board.mac >> 20) & 0xf]);
+    draw_char_right(':');
+    draw_char_right(hex[(board.mac >> 24) & 0xf]);
+    draw_char_right(hex[(board.mac >> 28) & 0xf]);
+    draw_char_right(':');
+    draw_char_right(hex[(board.mac >> 32) & 0xf]);
+    draw_char_right(hex[(board.mac >> 36) & 0xf]);
+}
+
+void draw_uint32(unsigned int data)
+{
+    char hex[] = "0123456789abcdef";
+    draw_char_right(hex[(data >> 28) & 0xf]);
+    draw_char_right(hex[(data >> 24) & 0xf]);
+    draw_char_right(hex[(data >> 20) & 0xf]);
+    draw_char_right(hex[(data >> 16) & 0xf]);
+    draw_char_right(hex[(data >> 12) & 0xf]);
+    draw_char_right(hex[(data >> 8)  & 0xf]);
+    draw_char_right(hex[(data >> 4)  & 0xf]);
+    draw_char_right(hex[(data >> 0)  & 0xf]);
+}
+
+void command_clear(void)
+{
+    for (unsigned int i = 0; i < command_len; i++) {
+        command[i] = 0;
+    }
+    command_len = 0;
+}
+
+void line_end_clear(void)
+{
+    for (unsigned int i = 0; i < cursor_row; i++) {
+        line_end[i] = 0;
+    }
+    cursor_row = 0;
+    cursor_col = 0;
+}
+
+int strlen(const char *s)
+{
+    unsigned int len = 0;
+    while (*s) {
+        s++;
+        len++;
+    }
+    return len;
+}
+
+int strcmp(const char *s1, const char *s2)
+{
+    unsigned int s1_sz = strlen(s1);
+    unsigned int s2_sz = strlen(s2);
+    if (s1_sz != s2_sz)
+        return -1;
+    for (unsigned int i = 0; i < s1_sz; i++) {
+        if (*(s1 + i) != *(s2 + i))
+            return -1;
+    }
+    return 1;
+}
+
+int command_process(unsigned char c)
+{
+    /* TODO: hash functions */
+    const char *clr = "clear";
+    const char *bon = "border on";
+    const char *bof = "border off";
+    const char *inf = "info";
+    if (strcmp(clr, (const char *)command) == 1) {
+        uart0_send_string("from command process, should clear\r\n");
+        draw_clear();
+        line_end_clear();
+        draw_block(XSTART, YSTART, 0xf);
+        return 0;
+    } else if (strcmp(bon, (const char *)command) == 1) {
+        draw_rect_frame(0, 0, display.width, display.height, 1);
+        return 1;
+    } else if (strcmp(bof, (const char *)command) == 1) {
+        draw_rect_frame(0, 0, display.width, display.height, 0);
+        return 1;
+    } else if (strcmp(inf, (const char *)command) == 1) {
+        draw_cursor_newline();
+        draw_string("Board firmware: ");
+        draw_uint32(board.firmware);
+
+        draw_cursor_newline();
+        draw_string("Board mac addr: ");
+        draw_mac_address();
+
+        return 1;
+    }
+    return -1;
+}
+
 void draw_char_process(unsigned char c)
 {
     switch (c) {
         case 0x7f: // backspace
+            if (command_len) {
+                command[command_len-1] = 0;
+                command_len--;
+            }
             draw_block(symb_x+symb_xn, symb_y+symb_yn, 0x0);
             if (symb_x + symb_xn != 5) {
                 draw_char_erase();
@@ -273,18 +418,56 @@ void draw_char_process(unsigned char c)
             draw_char_erase_last();
             break;
         case 0x0d: // \r
-            draw_cursor_newline();
+            uart0_send_string("\r\n");
+            uart0_send_string((const char *)command);
+            if (command_process(c) != 0)
+                draw_cursor_newline();
+            command_clear();
             break;
         default: // write char
-            draw_char_right(c);
+            command[command_len++] = c;
+            if (symb_x + symb_xn < 1905) {
+                draw_char_right(c);
+            } else {
+                draw_cursor_newline();
+                draw_char_right(c);
+            }
     }
 }
 
-void draw_string(int x, int y, char *str, unsigned int col)
+void draw_string(const char *str)
 {
     while (*str) {
-        draw_char(x, y, (unsigned char)*str, col);
-        x += GLYPH_WIDTH;
-        str++;
+        draw_char_right((unsigned char)*str++);
     }
+}
+
+void draw_clear(void)
+{
+    for (unsigned int y = 0; y < display.height; y++) {
+        for (unsigned int x = 0; x < display.width; x++) {
+            draw_pixel(x, y, 0x0);
+        }
+    }
+    symb_x = XSTART;
+    symb_y = YSTART;
+    symb_xn = 0;
+    symb_yn = 0;
+}
+
+void draw_color_band(void)
+{
+    int colors = 16;
+    int color_width = 20;
+    int band_xpos = display.width - colors * color_width - 10;
+    int band_height = 50;
+    int band_ypos = 10;
+    int next_xpos = band_xpos;
+
+    for (int i = 15; i >= 0; i--) {
+        draw_rect(next_xpos, band_ypos, color_width, band_height, i);
+        next_xpos += color_width;
+    }
+    draw_rect_frame(1000, 100, 200, 200, 1);
+    draw_rect_frame(band_xpos-1, 0, next_xpos+2, band_height+1, 1);
 }

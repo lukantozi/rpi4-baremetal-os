@@ -105,14 +105,30 @@ void uart0_send_uint32_test(void)
     uart0_send_string("\r\n");
 }
 
-int symb_x = 5;
-int symb_y = 5;
+int symb_x = XSTART;
+int symb_y = YSTART;
+
+void draw_chars_outside_range(void)
+{
+    draw_char(1921, 200, 'c', 0x0);
+    draw_char(400, 1300, 'l', 0x0);
+    draw_char(-1, 400, 'b', 0x0);
+    draw_char(120, -4, 'c', 0x0);
+    draw_char(-5, -4, 'n', 0x0);
+}
 
 void draw_chars_stuff(void)
 {
-    draw_string(symb_x, symb_y, "[MOS] Init", 0xf);
-    draw_block(symb_x, symb_y+symb_yn, 0xf);
-    line_end[0] = 10;
+   draw_string("[MOS] Init");
+   draw_cursor_newline();
+}
+
+void cursor_blink(void)
+{
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
+    DELAY(200000000);
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0x0);
+    DELAY(200000000);
 }
 
 void kernel_main(void)
@@ -141,8 +157,12 @@ void kernel_main(void)
     uart0_send_string("\r\n");
     draw_rect(10, 200, 50, 50, 1);
     draw_chars_stuff();
+    // draw_chars_outside_range();
     uart0_send_string("Type: ");
+    draw_rect_frame(0, 0, 1920, 1200, 1);
+    draw_color_band();
     while (1) {
+        cursor_blink();
     }
 #endif
 }

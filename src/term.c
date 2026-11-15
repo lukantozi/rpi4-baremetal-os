@@ -1,7 +1,7 @@
 #include "term.h"
 
 const unsigned int base16[16] = {
-    0x090300, // dark bg
+    0x000000, // dark bg 0x090300
     0xdb2d20, // red
     0x01a252, // green
     0xfded02, // yellow
