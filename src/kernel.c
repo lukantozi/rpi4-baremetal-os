@@ -3,6 +3,7 @@
 #include "irq.h"
 #include "mail.h"
 #include "peripherals.h"
+#include "term.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
@@ -123,13 +124,26 @@ void draw_chars_stuff(void)
    draw_cursor_newline();
 }
 
+void delay(unsigned int msec)
+{
+    unsigned long freq = timer_generic_read_frequency() / 1000;
+    unsigned long cntr = timer_generic_read_counter();
+    unsigned long dead = (freq * msec) + cntr;
+    while (cntr < dead)
+        cntr = timer_generic_read_counter();
+}
+
 void cursor_blink(void)
 {
-    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0xf);
-    DELAY(200000000);
-    draw_block(symb_x+symb_xn, symb_y+symb_yn, 0x0);
-    DELAY(200000000);
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, WHITE);
+    delay(400);
+    // DELAY(200000000);
+    draw_block(symb_x+symb_xn, symb_y+symb_yn, BLACK);
+    delay(300);
+    // DELAY(200000000);
 }
+
+Rect *rect;
 
 void kernel_main(void)
 {
@@ -155,11 +169,13 @@ void kernel_main(void)
 #else
     uart0_send_uint32(display.width);
     uart0_send_string("\r\n");
-    draw_rect(10, 200, 50, 50, 1);
+    draw_rect(10, 200, 50, 50, GREEN);
     draw_chars_stuff();
     // draw_chars_outside_range();
     uart0_send_string("Type: ");
-    draw_rect_frame(0, 0, 1920, 1200, 1);
+    *rect = create_rect(100, 100, 200, 200, BLUE);
+    draw_rect(rect->x_st, rect->y_st, rect->width, rect->height, rect->col);
+    draw_rect_frame(0, 0, display.width, display.height, 1);
     draw_color_band();
     while (1) {
         cursor_blink();

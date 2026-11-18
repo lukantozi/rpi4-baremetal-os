@@ -1,3 +1,4 @@
+#include "common.h"
 #include "utils.h"
 #include "uart.h"
 #include "term.h"
@@ -107,12 +108,75 @@ void uart0_send_uint32(unsigned int data)
     uart0_send_char(hex[(data >> 0)  & 0xf]);
 }
 
+
+typedef struct {
+    unsigned int arrows[4][3];
+    int count;
+} Arrow_detect;
+
+Arrow_detect detect = {
+    .arrows = {
+        {0x1b, 0x5b, 0x41},
+        {0x1b, 0x5b, 0x42},
+        {0x1b, 0x5b, 0x43},
+        {0x1b, 0x5b, 0x44}
+    },
+    .count = 0,
+};
+
+#define DETECT_NOT 0
+#define DETECT 1
+
+int detect_movement(unsigned char c)
+{
+    int status = 0;
+    if (detect.count < 2) {
+        if (c == detect.arrows[0][detect.count]) {
+            detect.count++;
+            return DETECT;
+        } else {
+            detect.count = 0;
+            return DETECT_NOT;
+        }
+    } else if (detect.count == 2) {
+        status = DETECT;
+        switch (c) {
+            case 0x41:
+                uart0_send_string("up\r\n");
+                detect.count = 0;
+                move_rect_up(rect, 30);
+                break;
+            case 0x42:
+                uart0_send_string("down\r\n");
+                detect.count = 0;
+                move_rect_down(rect, 30);
+                break;
+            case 0x43:
+                uart0_send_string("right\r\n");
+                detect.count = 0;
+                move_rect_right(rect, 30);
+                break;
+            case 0x44:
+                uart0_send_string("left\r\n");
+                detect.count = 0;
+                move_rect_left(rect, 30);
+                break;
+            default:
+                status = DETECT_NOT;
+                detect.count = 0;
+        }
+    }
+    return status;
+}
+
 void uart0_handle(void)
 {
     if (read_reg32(UART0_MIS) & (1 << 4)) {
         unsigned char c = read_reg32(UART0_DR) & 0xff;
-        uart0_send_char(c);
-        draw_char_process(c);
+        if (detect_movement(c) == 0) {
+            draw_char_process(c);
+            uart0_send_char(c);
+        }
     }
 }
 

@@ -13,5 +13,7 @@ void timer_arm(unsigned int interval);
 void timer_handle(void);
 void timer_generic_arm(unsigned int seconds);
 void timer_generic_handle(void);
+unsigned long timer_generic_read_counter(void);
+unsigned long timer_generic_read_frequency(void);
 
 #endif
