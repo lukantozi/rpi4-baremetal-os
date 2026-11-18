@@ -48,6 +48,9 @@ char uart0_receive_char(void);
 void uart0_send_char(char c);
 void uart0_send_string(const char *s);
 void uart0_send_uint32(unsigned int data);
+void uart0_send_board_serial(void);
+void uart0_send_firmware_revision(void);
+void uart0_send_mac_address(void);
 void uart0_handle(void);
 void uart_init(void);
 

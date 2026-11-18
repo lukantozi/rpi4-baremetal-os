@@ -23,5 +23,9 @@
 extern volatile unsigned int mailbox[49];
 unsigned int mailbox_read(unsigned char channel_req);
 void mailbox_write(unsigned char channel, unsigned int data);
+void mailbox_begin(void);
+unsigned int mailbox_add_tag(unsigned int tag, unsigned int bytes);
+void mailbox_end(void);
+void display_offset_show(void);
 
 #endif

@@ -1,7 +1,8 @@
-#include "peripherals.h"
 #include "timer.h"
-#include "utils.h"
+
+#include "peripherals.h"
 #include "uart.h"
+#include "utils.h"
 
 unsigned int timer_read_counter(void)
 {
@@ -70,4 +71,14 @@ void timer_generic_handle(void)
     __asm__ volatile("msr cntp_ctl_el0, %0" :: "r" (cntpl_enable));
     uart0_send_string("\r\n[Generic timer] IRQ handled\r\n");
     uart0_send_string("Type: ");
+}
+
+
+void delay(unsigned int msec)
+{
+    unsigned long freq = timer_generic_read_frequency() / 1000;
+    unsigned long cntr = timer_generic_read_counter();
+    unsigned long dead = (freq * msec) + cntr;
+    while (cntr < dead)
+        cntr = timer_generic_read_counter();
 }

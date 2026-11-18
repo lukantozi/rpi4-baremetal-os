@@ -9,18 +9,6 @@
 #define GENERIC 0
 #endif
 
-#define WAKE_CPU1 0xe0
-#define WAKE_CPU2 0xe8
-#define WAKE_CPU3 0xf0
-
-typedef struct {
-    int x_st;
-    int y_st;
-    int width;
-    int height;
-    unsigned int col;
-} Rect;
-
 /* from boot.S */
 extern void cpu123(void);
 extern unsigned long spin_cpu1;
@@ -29,10 +17,5 @@ extern unsigned long spin_cpu3;
 
 /* from entry.S */
 extern unsigned long vectors;
-
-/* from kernel.c */
-extern int symb_x;
-extern int symb_y;
-extern Rect *rect;
 
 #endif

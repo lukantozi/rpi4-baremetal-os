@@ -1,31 +1,27 @@
 #ifndef TERM_H
 #define TERM_H
 
-#define GLYPH_NUM  128
-#define GLYPH_BYTES  8
-#define GLYPH_HEIGHT 8
-#define GLYPH_WIDTH  8
-#define GLYPH_PERL   1
+void term_init(void);
+void term_cursor_blink(void);
+void term_backspace(void);
+void term_backspace_last(void);
+void term_putc(unsigned char c);
+void term_puts(const char *str);
+void term_newline(void);
+void term_newline_cli(void);
+int term_set_border(int on);
+void term_clear(void);
+void term_put_uint32(unsigned int data);
+void term_put_mac_address(void);
 
-#define BLACK 0
-#define RED 1
-#define GREEN 2
-#define YELLOW 3
-#define BLUE 4
-#define PINK 5
-#define LBLUE 6
-#define LGREY 7
-#define DGREY 8
-#define RED_ 9
-#define GREEN_ 10
-#define YELLOW_ 11
-#define BLUE_ 12
-#define PINK_ 13
-#define LBLUE_ 14
-#define WHITE 15
+extern int symb_xn;
+extern int symb_yn;
+extern int line_end[];
 
-// https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
-extern const unsigned char font8x8_basic[GLYPH_NUM][GLYPH_BYTES];
-extern const unsigned int base16[];
+#define XSTEP 8
+#define YSTEP 12
+#define XSTART 5
+#define YSTART 5
+#define NEWLINE 0
 
 #endif

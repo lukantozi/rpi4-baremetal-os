@@ -44,3 +44,26 @@ void disable_irq(void)
 {
     __asm__ volatile("msr daifset, #2" ::: "memory");
 }
+
+int strlen(const char *s)
+{
+    unsigned int len = 0;
+    while (*s) {
+        s++;
+        len++;
+    }
+    return len;
+}
+
+int strcmp(const char *s1, const char *s2)
+{
+    unsigned int s1_sz = strlen(s1);
+    unsigned int s2_sz = strlen(s2);
+    if (s1_sz != s2_sz)
+        return -1;
+    for (unsigned int i = 0; i < s1_sz; i++) {
+        if (*(s1 + i) != *(s2 + i))
+            return -1;
+    }
+    return 1;
+}

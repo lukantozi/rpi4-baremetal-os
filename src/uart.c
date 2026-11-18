@@ -1,9 +1,13 @@
-#include "common.h"
-#include "utils.h"
 #include "uart.h"
-#include "term.h"
-#include "peripherals.h"
+
+#include "common.h"
 #include "fb.h"
+#include "font.h"
+#include "info.h"
+#include "peripherals.h"
+#include "shell.h"
+#include "term.h"
+#include "utils.h"
 
 void gpio_activate(void)
 {
@@ -108,73 +112,49 @@ void uart0_send_uint32(unsigned int data)
     uart0_send_char(hex[(data >> 0)  & 0xf]);
 }
 
-
-typedef struct {
-    unsigned int arrows[4][3];
-    int count;
-} Arrow_detect;
-
-Arrow_detect detect = {
-    .arrows = {
-        {0x1b, 0x5b, 0x41},
-        {0x1b, 0x5b, 0x42},
-        {0x1b, 0x5b, 0x43},
-        {0x1b, 0x5b, 0x44}
-    },
-    .count = 0,
-};
-
-#define DETECT_NOT 0
-#define DETECT 1
-
-int detect_movement(unsigned char c)
+void uart0_send_mac_address(void)
 {
-    int status = 0;
-    if (detect.count < 2) {
-        if (c == detect.arrows[0][detect.count]) {
-            detect.count++;
-            return DETECT;
-        } else {
-            detect.count = 0;
-            return DETECT_NOT;
-        }
-    } else if (detect.count == 2) {
-        status = DETECT;
-        switch (c) {
-            case 0x41:
-                uart0_send_string("up\r\n");
-                detect.count = 0;
-                move_rect_up(rect, 30);
-                break;
-            case 0x42:
-                uart0_send_string("down\r\n");
-                detect.count = 0;
-                move_rect_down(rect, 30);
-                break;
-            case 0x43:
-                uart0_send_string("right\r\n");
-                detect.count = 0;
-                move_rect_right(rect, 30);
-                break;
-            case 0x44:
-                uart0_send_string("left\r\n");
-                detect.count = 0;
-                move_rect_left(rect, 30);
-                break;
-            default:
-                status = DETECT_NOT;
-                detect.count = 0;
-        }
-    }
-    return status;
+    char hex[] = "0123456789abcdef";
+    uart0_send_string("[MAC address] ");
+    uart0_send_char(hex[board.mac & 0xf]);
+    uart0_send_char(hex[(board.mac >> 4) & 0xf]);
+    uart0_send_string(":");
+    uart0_send_char(hex[(board.mac >> 8) & 0xf]);
+    uart0_send_char(hex[(board.mac >> 12) & 0xf]);
+    uart0_send_string(":");
+    uart0_send_char(hex[(board.mac >> 16) & 0xf]);
+    uart0_send_char(hex[(board.mac >> 20) & 0xf]);
+    uart0_send_string(":");
+    uart0_send_char(hex[(board.mac >> 24) & 0xf]);
+    uart0_send_char(hex[(board.mac >> 28) & 0xf]);
+    uart0_send_string(":");
+    uart0_send_char(hex[(board.mac >> 32) & 0xf]);
+    uart0_send_char(hex[(board.mac >> 36) & 0xf]);
+    uart0_send_string("\r\n");
 }
+
+void uart0_send_firmware_revision(void)
+{
+    uart0_send_string("[Firmware revision] 0x");
+    uart0_send_uint32(board.firmware);
+    uart0_send_string("\r\n");
+}
+
+void uart0_send_board_serial(void)
+{
+    uart0_send_string("[Serial] 0x");
+    uart0_send_uint32((unsigned int) (board.serial >> 32));
+    uart0_send_uint32((unsigned int) board.serial);
+    uart0_send_string("\r\n");
+}
+
 
 void uart0_handle(void)
 {
     if (read_reg32(UART0_MIS) & (1 << 4)) {
         unsigned char c = read_reg32(UART0_DR) & 0xff;
-        if (detect_movement(c) == 0) {
-            draw_char_process(c);
+        if (detect_arrow(c) == 0) {
+            process_key(c);
             uart0_send_char(c);
         }
     }

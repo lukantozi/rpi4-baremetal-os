@@ -1,8 +1,9 @@
-#include "utils.h"
+#include "irq.h"
+
 #include "peripherals.h"
 #include "timer.h"
 #include "uart.h"
-#include "irq.h"
+#include "utils.h"
 
 void enable_timer_irq(void)
 {
